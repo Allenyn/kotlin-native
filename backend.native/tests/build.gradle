@@ -38,6 +38,7 @@ apply plugin: 'konan'
 configurations {
     cli_bc
     update_tests
+    update_stdlib_tests
 }
 
 repositories {
@@ -49,17 +50,22 @@ repositories {
 
 dependencies {
     cli_bc project(path: ':backend.native', configuration: 'cli_bc')
-    update_tests (group: 'org',  name: 'Kotlin_dev_Compiler', version: testKotlinVersion) {
+    update_tests (group: 'org',  name: 'Kotlin_dev_Compiler', version: testKotlinCompilerVersion) {
         artifact {
             name = 'internal/kotlin-test-data'
             type = 'zip'
         }
     }
+    update_stdlib_tests (group: 'org',  name: 'Kotlin_dev_Compiler', version: testKotlinStdlibCommonVersion) {
+        artifact {
+            name = 'internal/kotlin-stdlib-tests'
+            type = 'zip'
+        }
+    }
 }
-
 ext.testOutputRoot = rootProject.file("test.output").absolutePath
 ext.externalTestsDir = project.file("build/external")
-ext.externalStdlibTestsDir = project.file("build/stdlib_external")
+ext.externalStdlibTestsDir = project.file("build/stdlib_external/stdlib")
 externalTestsDir.mkdirs()
 externalStdlibTestsDir.mkdirs()
 
@@ -114,7 +120,7 @@ def update_external_tests() {
     delete(externalTestsDir)
     externalTestsDir.mkdirs()
 
-    def files = configurations.update_tests.asFileTree
+    def compilerTestsFiles = configurations.update_tests.asFileTree
     if (project.hasProperty("kotlinProjectPath")) {
         def f = Paths.get(project.property("kotlinProjectPath").toString(), "dist", "kotlin-test-data.zip").toFile()
         if (f.exists()) {
@@ -122,28 +128,30 @@ def update_external_tests() {
                 |Using $f as a source of codegen/box* and stdlib tests
                 |Update test data zip with :kotlin:zipTestData task
             """.stripMargin())
-            files = project.files(f)
+            compilerTestsFiles = project.files(f)
         }
     }
 
     copy {
-        files.each {
+        compilerTestsFiles.each {
             from(zipTree(it))
             into(externalTestsDir)
             include 'compiler/codegen/box/**'
             include 'compiler/codegen/boxInline/**'
             include 'compiler/compileKotlinAgainstKotlin/**'
+            exclude 'stdlib/**'
         }
     }
 
     delete(externalStdlibTestsDir)
     externalStdlibTestsDir.mkdirs()
+    def stdlibTestsFiles = configurations.update_stdlib_tests.asFileTree
     copy {
-        files.each {
+        compilerTestsFiles.each {
             from(zipTree(it))
             into(externalStdlibTestsDir)
-            include 'stdlib/common/**'
-            include 'stdlib/test/**'
+            include 'common/**'
+            include 'test/**'
             exclude 'stdlib/test/js/**'
         }
     }
