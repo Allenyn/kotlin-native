@@ -56,7 +56,7 @@ dependencies {
             type = 'zip'
         }
     }
-    update_stdlib_tests (group: 'org',  name: 'Kotlin_dev_Compiler', version: testKotlinStdlibCommonVersion) {
+    update_stdlib_tests (group: 'org',  name: 'Kotlin_dev_Compiler', version: testKotlinStdlibVersion) {
         artifact {
             name = 'internal/kotlin-stdlib-tests'
             type = 'zip'
